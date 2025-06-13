@@ -71,22 +71,26 @@ const EventForm: React.FC<EventFormProps> = ({
     setEventData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleLocationChange = (value: string) => {
+  const handleLocationChange = async (value: string) => {
     handleChange("location", value);
 
-    // Mock location search functionality
+    // Real location search via backend Google Places API
     if (value.length > 2) {
-      // Simulate API call for location suggestions
-      setTimeout(() => {
-        const mockSuggestions = [
-          `${value}, New York, USA`,
-          `${value}, London, UK`,
-          `${value}, Tokyo, Japan`,
-          `${value}, Paris, France`,
-        ];
-        setLocationSuggestions(mockSuggestions);
-        setShowSuggestions(true);
-      }, 300);
+      try {
+        const response = await fetch(
+          `/api/geocode?query=${encodeURIComponent(value)}`,
+        );
+        if (response.ok) {
+          const result = await response.json();
+          if (result.formatted_address) {
+            setLocationSuggestions([result.formatted_address]);
+            setShowSuggestions(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching location suggestions:", error);
+        setShowSuggestions(false);
+      }
     } else {
       setShowSuggestions(false);
     }
@@ -115,13 +119,26 @@ const EventForm: React.FC<EventFormProps> = ({
         }),
       });
 
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to create event");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || `HTTP error! status: ${response.status}`,
+        );
       }
 
-      onSubmit(eventData);
+      const result = await response.json();
+      if (result.success) {
+        // Reset form after successful submission
+        setEventData({
+          name: "",
+          location: "",
+          type: "",
+          event_date: new Date(),
+        });
+        onSubmit(result.data);
+      } else {
+        throw new Error(result.error || "Failed to create event");
+      }
     } catch (error) {
       console.error("Error submitting event:", error);
       // You could add error state here to show user feedback

@@ -8,23 +8,18 @@ import {
   CardTitle,
   CardDescription,
   CardFooter,
-} from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
+} from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../components/ui/select";
-import { Input } from "../components/ui/input";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
+} from "./ui/select";
+import { Input } from "./ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   Calendar,
   CalendarIcon,
@@ -34,12 +29,8 @@ import {
   Search,
   SunMoon,
 } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../components/ui/popover";
-import { Calendar as CalendarComponent } from "../components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar as CalendarComponent } from "./ui/calendar";
 import { format } from "date-fns";
 
 interface Event {
@@ -74,14 +65,15 @@ const EventList = ({
   const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
-  // Mock event types for the filter dropdown
+  // Event types for the filter dropdown - these should match backend event types
   const eventTypes = [
     "sports",
     "wedding",
     "picnic",
     "concert",
+    "festival",
     "conference",
-    "party",
+    "other",
   ];
 
   useEffect(() => {
@@ -138,27 +130,19 @@ const EventList = ({
     return "bg-red-500";
   };
 
-  const getWeatherStatusBadge = (status?: string) => {
-    if (
-      !status ||
-      status === "N/A" ||
-      status.includes("Error") ||
-      status === "Forecast Unavailable"
-    ) {
+  const getWeatherStatusBadge = (score?: number) => {
+    if (score === undefined || score === null) {
       return <Badge variant="outline">No Data</Badge>;
     }
 
-    switch (status) {
-      case "Excellent":
-        return <Badge className="bg-green-500">Excellent</Badge>;
-      case "Good":
-        return <Badge className="bg-green-300">Good</Badge>;
-      case "Fair":
-        return <Badge className="bg-yellow-400">Fair</Badge>;
-      case "Poor":
-        return <Badge className="bg-red-500">Poor</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+    if (score >= 80) {
+      return <Badge className="bg-green-500 text-white">Excellent</Badge>;
+    } else if (score >= 60) {
+      return <Badge className="bg-green-300 text-white">Good</Badge>;
+    } else if (score >= 40) {
+      return <Badge className="bg-yellow-400 text-black">Fair</Badge>;
+    } else {
+      return <Badge className="bg-red-500 text-white">Poor</Badge>;
     }
   };
 
@@ -174,7 +158,10 @@ const EventList = ({
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold">Events</h2>
-          <Button onClick={onCreateEvent}>Create Event</Button>
+          <Button onClick={onCreateEvent} variant="outline">
+            <Search className="h-4 w-4 mr-2" />
+            Create Event
+          </Button>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4">
@@ -296,7 +283,7 @@ const EventList = ({
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{event.name}</CardTitle>
-                    {getWeatherStatusBadge(event.weather_status)}
+                    {getWeatherStatusBadge(event.suitability_score)}
                   </div>
                   <CardDescription>
                     {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
@@ -352,7 +339,7 @@ const EventList = ({
                     <div className="flex items-center space-x-2 mb-1">
                       <h3 className="font-medium">{event.name}</h3>
                       <Badge variant="outline">{event.type}</Badge>
-                      {getWeatherStatusBadge(event.weather_status)}
+                      {getWeatherStatusBadge(event.suitability_score)}
                     </div>
                     <div className="text-sm text-muted-foreground mb-2">
                       {event.location}

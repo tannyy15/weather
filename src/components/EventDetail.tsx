@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -8,16 +8,11 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Button } from "../components/ui/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
+} from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import {
   CalendarIcon,
   CloudRainIcon,
@@ -92,6 +87,7 @@ const EventDetail = ({
   const [eventData, setEventData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("weather");
 
   useEffect(() => {
     if (event) {
@@ -105,13 +101,17 @@ const EventDetail = ({
     setIsLoading(true);
     setError(null);
     try {
+      // Fetch event details from Next.js API route
       const response = await fetch(`/api/events/${id}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const result = await response.json();
 
       if (result.success) {
         setEventData(result.data);
       } else {
-        setError(result.error || "Failed to fetch event details");
+        throw new Error(result.error || "Failed to fetch event details");
       }
     } catch (err) {
       setError("Failed to fetch event details");
@@ -168,7 +168,6 @@ const EventDetail = ({
     suitability_details,
     alternative_dates,
   } = eventData;
-  const [activeTab, setActiveTab] = useState("weather");
 
   // Format date for display
   const formatDate = (dateString: string) => {
@@ -555,9 +554,10 @@ const EventDetail = ({
                               variant="outline"
                               size="sm"
                               className="mt-4"
-                              onClick={() =>
-                                console.log(`Reschedule to ${alt.date}`)
-                              }
+                              onClick={() => {
+                                // TODO: Implement reschedule functionality
+                                console.log(`Reschedule to ${alt.date}`);
+                              }}
                             >
                               Reschedule to this date
                             </Button>

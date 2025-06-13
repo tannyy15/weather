@@ -1,21 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../components/ui/tabs";
-import { Button } from "../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Button } from "./ui/button";
 import { Bell, Calendar, Plus, RefreshCw } from "lucide-react";
-import { Badge } from "../components/ui/badge";
+import { Badge } from "./ui/badge";
 import EventList from "./EventList";
 import EventForm from "./EventForm";
 import EventDetail from "./EventDetail";
@@ -46,32 +36,8 @@ export default function Dashboard() {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [activeTab, setActiveTab] = useState("events");
   const [isLoading, setIsLoading] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: 1,
-      title: "Weather Alert",
-      message: "Heavy rain expected for your Beach Party on Saturday",
-      type: "alert",
-      timestamp: new Date().toISOString(),
-      read: false,
-    },
-    {
-      id: 2,
-      title: "Event Reminder",
-      message: "Your Outdoor Concert is tomorrow",
-      type: "reminder",
-      timestamp: new Date().toISOString(),
-      read: false,
-    },
-    {
-      id: 3,
-      title: "Better Weather Found",
-      message: "Sunday would be a better day for your Picnic",
-      type: "recommendation",
-      timestamp: new Date().toISOString(),
-      read: false,
-    },
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -80,19 +46,29 @@ export default function Dashboard() {
   const fetchEvents = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/events");
-      const result = await response.json();
+      const response = await fetch("/api/events", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
       if (result.success) {
-        setEvents(result.data);
+        setEvents(result.data || []);
+        if (result.message) {
+          console.log(result.message);
+        }
       } else {
-        console.error("Failed to fetch events:", result.error);
-        // Fallback to empty array
-        setEvents([]);
+        throw new Error(result.error || "Failed to fetch events");
       }
     } catch (error) {
       console.error("Failed to fetch events:", error);
-      // Fallback to empty array
+      // Set empty array as fallback
       setEvents([]);
     } finally {
       setIsLoading(false);
@@ -104,36 +80,20 @@ export default function Dashboard() {
     setActiveTab("details");
   };
 
-  const handleCreateEvent = async (
-    eventData: Omit<
-      Event,
-      "id" | "latitude" | "longitude" | "weather_status" | "suitability_score"
-    >,
-  ) => {
+  const handleCreateEvent = async (eventData: any) => {
     try {
-      const response = await fetch("/api/events", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: eventData.name,
-          type: eventData.type,
-          location: eventData.location,
-          event_date: eventData.event_date,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Refresh events list
-        await fetchEvents();
-        setActiveTab("events");
-      } else {
-        console.error("Failed to create event:", result.error);
-      }
+      // Event is already created by EventForm, just refresh the list
+      await fetchEvents();
+      setActiveTab("events");
+      setShowCreateForm(false);
     } catch (error) {
-      console.error("Error creating event:", error);
+      console.error("Error handling event creation:", error);
     }
+  };
+
+  const handleShowCreateForm = () => {
+    setShowCreateForm(true);
+    setActiveTab("create");
   };
 
   const handleMarkAllRead = () => {
@@ -172,7 +132,7 @@ export default function Dashboard() {
                 </Badge>
               )}
             </Button>
-            <Button onClick={() => setActiveTab("create")}>
+            <Button onClick={handleShowCreateForm}>
               <Plus className="h-4 w-4 mr-2" />
               New Event
             </Button>
@@ -185,10 +145,12 @@ export default function Dashboard() {
               <Calendar className="h-4 w-4 mr-2" />
               Events
             </TabsTrigger>
-            <TabsTrigger value="create">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </TabsTrigger>
+            {showCreateForm && (
+              <TabsTrigger value="create">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
+              </TabsTrigger>
+            )}
             {selectedEvent && (
               <TabsTrigger value="details">Event Details</TabsTrigger>
             )}
@@ -208,19 +170,22 @@ export default function Dashboard() {
               events={events}
               isLoading={isLoading}
               onEventSelect={handleEventSelect}
+              onCreateEvent={handleShowCreateForm}
             />
           </TabsContent>
 
-          <TabsContent value="create">
-            <Card>
-              <CardHeader>
-                <CardTitle>Create New Event</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EventForm onSubmit={handleCreateEvent} />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {showCreateForm && (
+            <TabsContent value="create">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Create New Event</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EventForm onSubmit={handleCreateEvent} />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           <TabsContent value="details">
             {selectedEvent && (
