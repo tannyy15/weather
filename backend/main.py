@@ -12,22 +12,18 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
-# Load environment variables from .env file
-load_dotenv()
-
-# --- Configuration ---
-OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
-GOOGLE_PLACES_API_KEY = os.getenv("GOOGLE_PLACES_API_KEY")
+# Replace these with your actual API keys
+OPENWEATHER_API_KEY = "7f7bd123b2f255c5fbcb63fcce54830a"  # Replace this with your OpenWeather API key
+GOOGLE_PLACES_API_KEY = "AIzaSyCKtOVDaTrGwLvBFvYIcAJ50K8FpPudI2s"  # Replace this with your Google Places API key
 
 OPENWEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5"
 GOOGLE_PLACES_BASE_URL = "https://maps.googleapis.com/maps/api/place"
 
 # Check if API keys are set
-if not OPENWEATHER_API_KEY:
-    raise RuntimeError("OPENWEATHER_API_KEY not found in environment variables.")
-if not GOOGLE_PLACES_API_KEY:
-    raise RuntimeError("GOOGLE_PLACES_API_KEY not found in environment variables.")
-
+if OPENWEATHER_API_KEY == "your_openweather_api_key_here":
+    raise RuntimeError("Please replace the OPENWEATHER_API_KEY with your actual API key.")
+if GOOGLE_PLACES_API_KEY == "your_google_places_api_key_here":
+    raise RuntimeError("Please replace the GOOGLE_PLACES_API_KEY with your actual API key.")
 # --- Database Setup (SQLite) ---
 SQLALCHEMY_DATABASE_URL = "sqlite:///./events.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
